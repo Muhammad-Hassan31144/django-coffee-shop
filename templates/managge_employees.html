@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Employees{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Manage Employees</h2>
+<a href="{% url 'add_employee' %}" class="btn btn-primary mb-3">Add Employee</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for employee in employees %}
+        <tr>
+            <td>{{ employee.username }}</td>
+            <td>{{ employee.role }}</td>
+            <td>
+                <form action="{% url 'delete_employee' employee.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
