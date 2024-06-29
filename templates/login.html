@@ -12,6 +12,11 @@
     <div class="form-group">
         {{ form.password.label_tag }}{{ form.password }}
     </div>
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
     <button type="submit" class="btn btn-primary">Login</button>
 </form>
 {% endblock %}

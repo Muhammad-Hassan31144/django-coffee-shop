@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -70,7 +71,7 @@ ROOT_URLCONF = 'coffee_shop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,6 +84,7 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'coffee_shop.wsgi.application'
 
 
@@ -92,7 +94,7 @@ WSGI_APPLICATION = 'coffee_shop.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Coffee_shop',
+        'NAME': 'coffee_shop_sos',
         'USER': 'root',
         'PASSWORD': 'root',
         'HOST': 'localhost',
@@ -120,7 +122,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 

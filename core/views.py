@@ -2,51 +2,50 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-import json
+from django.contrib.auth.forms import AuthenticationForm
+from rest_framework import viewsets
 
 from .models import Order, User
-from .forms import OrderForm, UserForm, LoginForm
+from .forms import OrderForm, UserForm
 from .serializers import OrderSerializer, UserSerializer
-
-from rest_framework import viewsets
+from django.contrib.auth.hashers import make_password
+def home(request):
+    if request.user.is_authenticated:
+        return redirect('order_list')
+    else:
+        return redirect('login')
 
 # Login View
 @csrf_exempt
 def login_view(request):
+    print("Login view called")
     if request.method == 'POST':
-        form = LoginForm(data=request.POST)
+        print("POST request received")
+        form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                csrf_token = get_token(request)  # Get the CSRF token
-                return JsonResponse({
-                    'success': True,
-                    'user': {
-                        'id': user.id,
-                        'username': user.username
-                    },
-                    'csrfToken': csrf_token  # Include CSRF token in the response
-                })
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid credentials'}, status=400)
+            print("Form is valid")
+            user = form.get_user()
+            print(f"Authenticating user: {user.username}")
+            login(request, user)
+            print(f"User {user.username} logged in successfully")
+            return redirect('order_list')  # Redirect to 'order_list' view
         else:
-            return JsonResponse({'success': False, 'error': 'Invalid form data'}, status=400)
+            print(f"Invalid credentials: {form.errors}")
+            return render(request, 'login.html', {'form': form, 'error': 'Invalid credentials'})
     else:
-        form = LoginForm()
+        print("GET request received, rendering login form")
+        form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
 
 # Logout View
-@csrf_exempt
+@login_required
 def logout_view(request):
     if request.method == 'POST':
         logout(request)
-        return JsonResponse({'success': True})
-    return JsonResponse({'error': 'POST request required'}, status=400)
+        return redirect('login')
+    return redirect('login')
 
 # Order Views
 @login_required
@@ -67,22 +66,45 @@ def order_list(request):
     orders = Order.objects.all()
     return render(request, 'order_list.html', {'orders': orders})
 
+@login_required
+def edit_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if request.method == 'POST':
+        form = OrderForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            return redirect('order_list')
+    else:
+        form = OrderForm(instance=order)
+    return render(request, 'edit_order.html', {'form': form, 'order': order})
+
+@login_required
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if request.method == 'POST':
+        order.delete()
+        return redirect('order_list')
+    return render(request, 'delete_order.html', {'order': order})
+
 # Employee Management Views
 @login_required
 def manage_employees(request):
     if request.user.role != 'MANAGER':
-        return redirect('home')
-    employees = User.objects.filter(role='EMPLOYEE')
+        return redirect('order_list')
+    employees = User.objects.exclude(id=request.user.id) 
+    # employees = User.objects.filter(role='EMPLOYEE')
     return render(request, 'manage_employees.html', {'employees': employees})
 
 @login_required
 def add_employee(request):
     if request.user.role != 'MANAGER':
-        return redirect('home')
+        return redirect('order_list')
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+            user.password = make_password(form.cleaned_data['password'])
+            user.save()
             return redirect('manage_employees')
     else:
         form = UserForm()
@@ -91,10 +113,12 @@ def add_employee(request):
 @login_required
 def delete_employee(request, user_id):
     if request.user.role != 'MANAGER':
-        return redirect('home')
-    user = User.objects.get(id=user_id)
-    user.delete()
-    return redirect('manage_employees')
+        return redirect('order_list')
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        user.delete()
+        return redirect('manage_employees')
+    return render(request, 'delete_employee.html', {'user': user})
 
 # CSRF Token View
 def get_csrf_token(request):

@@ -11,6 +11,7 @@
             <th>Items Ordered</th>
             <th>Total Price</th>
             <th>Created At</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -20,6 +21,13 @@
             <td>{{ order.items_ordered }}</td>
             <td>{{ order.total_price }}</td>
             <td>{{ order.created_at }}</td>
+            <td>
+                <a href="{% url 'edit_order' order.id %}" class="btn btn-secondary btn-sm">Edit</a>
+                <form action="{% url 'delete_order' order.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

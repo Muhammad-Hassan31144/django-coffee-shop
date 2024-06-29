@@ -20,3 +20,5 @@ class UserForm(forms.ModelForm):
             'password': forms.PasswordInput(attrs={'class': 'form-control'}),
             'role': forms.Select(attrs={'class': 'form-control'}),
         }
+
+
